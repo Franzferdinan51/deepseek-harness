@@ -162,7 +162,12 @@ function foreignAssistant(message: HarnessAssistantMessage): AssistantMessage {
   for (const block of message.content) {
     switch (block.type) {
       case 'text': content.push({ type: 'text', text: block.text }); break
-      case 'reasoning': content.push({ type: 'thinking', thinking: block.text }); break
+      case 'reasoning':
+        // Unsigned thinking is dropped by provider converters, which
+        // replay only signed thinking blocks. Carry the text as plain
+        // text instead: every converter sends it, in block order.
+        if (block.text.trim().length > 0) content.push({ type: 'text', text: block.text })
+        break
       case 'tool-call': content.push({
         type: 'toolCall',
         id: block.id,

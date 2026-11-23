@@ -766,3 +766,33 @@ describe('pi-ai system prompt source', () => {
     expect(read).not.toHaveBeenCalled()
   })
 })
+
+describe('pi-ai foreign assistant conversion', () => {
+  it('carries unsigned reasoning as text so provider converters send it', () => {
+    const message = toPiAssistant(createAssistantMessage({
+      content: [
+        { type: 'reasoning', text: 'first I check the workspace' },
+        { type: 'text', text: 'checking now' },
+        { type: 'tool-call', id: brandString<ToolCallId>('call-1'), name: 'lookup', arguments: '{}' },
+      ],
+      source: { provider: 'openai', model: 'gpt-4.1' },
+    }))
+    expect(message.api).toBe('dsh-foreign')
+    expect(message.content).toEqual([
+      { type: 'text', text: 'first I check the workspace' },
+      { type: 'text', text: 'checking now' },
+      { type: 'toolCall', id: 'call-1', name: 'lookup', arguments: {} },
+    ])
+  })
+
+  it('omits empty reasoning from foreign history', () => {
+    const message = toPiAssistant(createAssistantMessage({
+      content: [
+        { type: 'reasoning', text: '  ' },
+        { type: 'text', text: 'answer' },
+      ],
+      source: { provider: 'openai', model: 'gpt-4.1' },
+    }))
+    expect(message.content).toEqual([{ type: 'text', text: 'answer' }])
+  })
+})
